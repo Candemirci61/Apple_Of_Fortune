@@ -1,12 +1,12 @@
 package com.vbshuliar.apple_of_fortune.gameplay.domain.use_cases
 
-import com.vbshuliar.apple_of_fortune.gameplay.domain.model.Cell
+import com.vbshuliar.apple_of_fortune.gameplay.domain.model.CellState
 
 class GenerateTable {
-    operator fun invoke(): List<List<Cell>> {
-        val table = mutableListOf<List<Cell>>()
-        for (i in 0..9) {
-            val countRottenApples = when (i) {
+    operator fun invoke(): List<List<CellState>> {
+        var table = mutableListOf<List<CellState>>()
+        for (rowIndex in 0..9) {
+            val countUnhealthyCells = when (rowIndex) {
                 in 0..3 -> 1
                 in 4..6 -> 2
                 in 7..8 -> 3
@@ -14,23 +14,33 @@ class GenerateTable {
                 else -> 0
             }
 
-            val shuffledRow = generateRow(countRottenApples)
+            val shuffledRow = generateRow(countUnhealthyCells)
             table.add(shuffledRow)
         }
+        enumerateCells(table)
         return table
     }
 
-    private fun generateRow(countUnhealthyCells: Int): List<Cell> {
-        val shuffledCells = mutableListOf<Cell>()
-        for (i in 1..5) {
-            if (i <= countUnhealthyCells) {
-                shuffledCells.add(Cell(isHealthy = false))
+    private fun generateRow(countUnhealthyCells: Int): List<CellState> {
+        val shuffledCellStates = mutableListOf<CellState>()
+        for (columnIndex in 0..4) {
+            if (columnIndex < countUnhealthyCells) {
+                shuffledCellStates.add(CellState(isHealthy = false))
             } else {
-                shuffledCells.add(Cell())
-
+                shuffledCellStates.add(CellState())
             }
         }
-        shuffledCells.shuffle()
-        return shuffledCells
+        shuffledCellStates.shuffle()
+        return shuffledCellStates
+    }
+
+    private fun enumerateCells(table: List<List<CellState>>) {
+        for (rowIndex in table.indices) {
+            for (columnIndex in table[rowIndex].indices) {
+                val cell = table[rowIndex][columnIndex]
+                cell.rowIndex = rowIndex
+                cell.columnIndex = columnIndex
+            }
+        }
     }
 }

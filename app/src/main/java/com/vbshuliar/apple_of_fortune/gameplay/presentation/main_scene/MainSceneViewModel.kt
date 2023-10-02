@@ -24,7 +24,9 @@ class MainSceneViewModel @Inject constructor(private val generateTable: Generate
 
     fun onEvent(event: MainSceneEvent) {
         when (event) {
-            is MainSceneEvent.OnCellPress -> {
+            is MainSceneEvent.OnCellClick -> {
+
+                println("Row: ${event.row} Column: ${event.column}")
                 val currentTable = state.value.table
                 val currentRow = state.value.currentRow
 
@@ -42,7 +44,7 @@ class MainSceneViewModel @Inject constructor(private val generateTable: Generate
                 }
             }
 
-            is MainSceneEvent.OnCollectPress -> {
+            is MainSceneEvent.OnCollectClick -> {
                 sendUiEvent(MainSceneUiEvent.Winner(state.value.currentRow))
             }
         }
