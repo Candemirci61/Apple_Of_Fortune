@@ -40,6 +40,7 @@ class GenerateTable {
                 val cell = table[rowIndex][columnIndex]
                 cell.rowIndex = rowIndex
                 cell.columnIndex = columnIndex
+                cell.isActive = rowIndex == 0
             }
         }
     }

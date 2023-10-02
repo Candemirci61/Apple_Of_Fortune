@@ -5,7 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vbshuliar.apple_of_fortune.gameplay.domain.use_cases.GenerateTable
-import com.vbshuliar.apple_of_fortune.gameplay.utils.MAX_ROW
+import com.vbshuliar.apple_of_fortune.gameplay.utils.MAX_COLUMN_INDEX
+import com.vbshuliar.apple_of_fortune.gameplay.utils.MAX_ROW_INDEX
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -26,20 +27,20 @@ class MainSceneViewModel @Inject constructor(private val generateTable: Generate
         when (event) {
             is MainSceneEvent.OnCellClick -> {
 
-                println("Row: ${event.row} Column: ${event.column}")
-                val currentTable = state.value.table
                 val currentRow = state.value.currentRow
 
                 if (currentRow == event.row) {
                     revealCell(event.row, event.column)
+                    val currentTable = state.value.table
                     if (currentTable[event.row][event.column].isHealthy) {
-                        if (currentRow == MAX_ROW) {
+                        if (currentRow == MAX_ROW_INDEX) {
                             sendUiEvent(MainSceneUiEvent.Winner(state.value.currentRow))
                         } else {
-                            moveUp()
+                            moveUp(event)
                         }
                     } else {
                         sendUiEvent(MainSceneUiEvent.Loser)
+                        revealTable()
                     }
                 }
             }
@@ -56,38 +57,45 @@ class MainSceneViewModel @Inject constructor(private val generateTable: Generate
         }
     }
 
-    private fun moveUp() {
-        _state.value = state.value.copy(currentRow = state.value.currentRow + 1)
-        val currentState = state.value
-        val currentRow = currentState.currentRow
-        val currentTable = currentState.table
-        val updatedTable = currentTable.mapIndexed { rowIndex, cellRow ->
-            cellRow.map { cell ->
-                cell.copy(isActive = rowIndex == currentRow)
+    private fun moveUp(event: MainSceneEvent.OnCellClick) {
+        val newRow = event.row + 1
+        val updatedTable = _state.value.table.mapIndexed { rowIndex, cellRow ->
+            val isCurrentRow = rowIndex == event.row
+            val isNewRow = rowIndex == newRow
+
+            cellRow.forEach { cell ->
+                cell.isVisible =
+                    (isCurrentRow && cell.columnIndex == event.column) || cell.isVisible
+                cell.isActive = isNewRow
             }
+            cellRow
         }
-        _state.value = currentState.copy(table = updatedTable)
+        _state.value = _state.value.copy(currentRow = newRow, table = updatedTable)
     }
 
-    private fun revealCell(row: Int, column: Int) {
-        val currentState = state.value
+    private fun revealCell(rowIndex: Int, columnIndex: Int) {
+        val currentState = _state.value
         val currentTable = currentState.table
-        val updatedTable = currentTable.mapIndexed { rowIndex, cellRow ->
-            cellRow.mapIndexed { columnIndex, cell ->
-                cell.copy(isVisible = column == columnIndex && row == rowIndex)
+
+        val updatedTable = currentTable.map { cellRow ->
+            cellRow.map { cellState ->
+                val isVisible =
+                    cellState.rowIndex == rowIndex && cellState.columnIndex == columnIndex || cellState.isVisible
+                val isActive = false
+
+                cellState.copy(isVisible = isVisible, isActive = isActive)
             }
         }
+
         _state.value = currentState.copy(table = updatedTable)
     }
 
     private fun revealTable() {
-        val currentState = state.value
-        val currentTable = currentState.table
-        val updatedTable = currentTable.map { cellRow ->
-            cellRow.map { cell ->
-                cell.copy(isVisible = true)
+        for (rowIndex in 0..MAX_ROW_INDEX) {
+            for (columnIndex in 0..MAX_COLUMN_INDEX) {
+                revealCell(rowIndex, columnIndex)
             }
         }
-        _state.value = currentState.copy(table = updatedTable)
     }
+
 }
