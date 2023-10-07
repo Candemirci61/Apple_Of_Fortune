@@ -21,7 +21,7 @@ fun CellCard(cellState: CellState, onEvent: (MainSceneEvent) -> Unit) {
         modifier = Modifier
             .padding(4.dp)
             .size(50.dp)
-            .clickable {
+            .clickable(enabled = cellState.isActive) {
                 onEvent(MainSceneEvent.OnCellClick(cellState.rowIndex, cellState.columnIndex))
             }
     ) {
